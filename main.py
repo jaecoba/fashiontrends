@@ -7,22 +7,13 @@ app = Flask(__name__)
 # Initialize pytrends
 pytrends = TrendReq(hl='en-US', tz=360)
 
-@app.route('/api/trends', methods=['GET'])
-def get_trends():
-    # Get keyword, region, and timeframe from request parameters
-    keyword = request.args.get('keyword', 'fashion')
-    region = request.args.get('region', 'US')
-    start_date = request.args.get('start_date', 'today 12-m')
-    end_date = request.args.get('end_date', None)
+fashion = ['baggy jeans', 'skinny jeans', 'straight jeans', 'high waisted jeans', 'bootcut jeans']
 
-    # Build timeframe
-    if end_date:
-        timeframe = f'{start_date} {end_date}'
-    else:
-        timeframe = start_date
+@app.route('/', methods=['GET'])
+def get_popular_trends():
 
     # Build the payload for the trends request
-    pytrends.build_payload([keyword], geo=region, timeframe=timeframe)
+    pytrends.build_payload(fashion, geo='US', timeframe='today 12-m')
     trends_data = pytrends.interest_over_time()
 
     # If no data is found, return a 404 error
@@ -30,7 +21,7 @@ def get_trends():
         return jsonify({"error": "No data available for the given query"}), 404
 
     # Drop 'isPartial' column (if necessary)
-    trends_data = trends_data.drop(columns=['isPartial'], errors='ignore')
+    trends_data['most_popular'] = trends_data.idxmax(axis=1)
 
     # Convert data to JSON and return
     trends_json = trends_data.reset_index().to_dict(orient='records')
